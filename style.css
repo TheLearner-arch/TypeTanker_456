@@ -1,0 +1,996 @@
+/* ==========================================================================
+   TYPE//TANK - Authenticated DOS Arcade Terminal Design System
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap');
+
+:root {
+    --bg-deep: #020402;
+    --bg-cabinet: #040804;
+    --bg-panel: rgba(6, 18, 8, 0.92);
+    --bg-panel-solid: #061408;
+    --bg-darker: #020702;
+
+    --green-bright: #00ff66;
+    --green-core: #33ff66;
+    --green-dim: #185222;
+    --green-border: #1f6e2b;
+    --green-glow: rgba(0, 255, 102, 0.45);
+
+    --crimson: #ff2a4b;
+    --crimson-glow: rgba(255, 42, 75, 0.55);
+    --crimson-bg: rgba(45, 6, 14, 0.85);
+
+    --amber: #ffb000;
+    --amber-glow: rgba(255, 176, 0, 0.45);
+    --amber-bg: rgba(40, 26, 4, 0.85);
+
+    --white-crisp: #f0fff0;
+    --white-dim: #99bb99;
+
+    --font-terminal: 'Share Tech Mono', monospace;
+    --font-arcade: 'Press Start 2P', monospace;
+    --font-dos: 'VT323', monospace;
+
+    --bezel-width: 0px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #000000;
+    color: var(--green-core);
+    font-family: var(--font-terminal);
+    font-size: 13px;
+    line-height: 1.35;
+    -webkit-font-smoothing: none;
+    image-rendering: pixelated;
+}
+
+/* ==========================================================================
+   Arcade Cabinet & Aspect Ratio Framework
+   ========================================================================== */
+
+#cabinet-root {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #010301;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Cabinet Container */
+.cabinet-frame {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-deep);
+    position: relative;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.95);
+    transition: width 0.2s ease, height 0.2s ease, max-width 0.2s ease;
+    overflow: hidden;
+}
+
+/* Aspect Ratio Variations */
+.cabinet-frame.aspect-auto {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100%;
+    max-height: 100%;
+    border: none;
+}
+
+.cabinet-frame.aspect-16-9 {
+    aspect-ratio: 16 / 9;
+    width: min(100vw, calc(100vh * (16 / 9)));
+    height: min(100vh, calc(100vw * (9 / 16)));
+    max-width: 100vw;
+    max-height: 100vh;
+    border-left: 20px solid #0d140e;
+    border-right: 20px solid #0d140e;
+    border-top: 6px solid #142016;
+    border-bottom: 8px solid #142016;
+    box-shadow: inset 0 0 35px #000000, 0 0 60px rgba(0, 255, 65, 0.08);
+}
+
+.cabinet-frame.aspect-4-3 {
+    aspect-ratio: 4 / 3;
+    width: min(100vw, calc(100vh * (4 / 3)));
+    height: min(100vh, calc(100vw * (3 / 4)));
+    max-width: 100vw;
+    max-height: 100vh;
+    border-left: 32px solid #0d140e;
+    border-right: 32px solid #0d140e;
+    border-top: 8px solid #142016;
+    border-bottom: 10px solid #142016;
+    box-shadow: inset 0 0 45px #000000, 0 0 70px rgba(0, 255, 65, 0.08);
+}
+
+/* CRT Overlay Layers */
+.crt-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+}
+
+.crt-scanlines {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%,
+        rgba(0, 0, 0, 0.28) 50%
+    ),
+    linear-gradient(
+        90deg,
+        rgba(255, 0, 0, 0.02),
+        rgba(0, 255, 0, 0.01),
+        rgba(0, 0, 255, 0.02)
+    );
+    background-size: 100% 3px, 6px 100%;
+}
+
+.crt-vignette {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.85);
+    background: radial-gradient(circle at center, transparent 65%, rgba(0, 0, 0, 0.45) 100%);
+}
+
+/* CRT Toggle Class */
+body.crt-disabled .crt-overlay {
+    display: none;
+}
+
+/* Phosphor Glow on Text & Borders */
+.glow-green {
+    text-shadow: 0 0 6px var(--green-glow);
+}
+.glow-crimson {
+    text-shadow: 0 0 6px var(--crimson-glow);
+}
+.glow-amber {
+    text-shadow: 0 0 6px var(--amber-glow);
+}
+
+/* ==========================================================================
+   Header Command Bar / Marquee HUD
+   ========================================================================== */
+
+.marquee-header {
+    height: 38px;
+    min-height: 38px;
+    background: #030803;
+    border-bottom: 2px solid var(--green-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    z-index: 100;
+}
+
+.marquee-branding {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logo-radar {
+    color: var(--green-bright);
+    animation: radarBlink 1.4s infinite;
+    font-size: 14px;
+}
+
+@keyframes radarBlink {
+    0%, 100% { opacity: 1; filter: drop-shadow(0 0 4px var(--green-bright)); }
+    50% { opacity: 0.35; filter: none; }
+}
+
+.logo-title {
+    font-family: var(--font-arcade);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--white-crisp);
+    text-shadow: 0 0 8px var(--green-bright);
+}
+
+.header-callsign-badge {
+    background: var(--bg-darker);
+    border: 1px solid var(--green-border);
+    padding: 2px 8px;
+    font-size: 11px;
+    color: var(--amber);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.5px;
+}
+
+.header-callsign-badge span.val {
+    color: var(--white-crisp);
+    font-weight: bold;
+}
+
+.marquee-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Retro DOS Button */
+.retro-btn {
+    background: var(--bg-darker);
+    border: 1px solid var(--green-border);
+    color: var(--green-core);
+    font-family: var(--font-terminal);
+    font-size: 11px;
+    padding: 3px 8px;
+    cursor: pointer;
+    outline: none;
+    transition: background 0.1s, border-color 0.1s, color 0.1s;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.retro-btn:hover {
+    background: var(--green-dim);
+    color: #ffffff;
+    border-color: var(--green-bright);
+    box-shadow: 0 0 8px var(--green-glow);
+}
+
+.retro-btn:active {
+    background: var(--green-bright);
+    color: #000000;
+}
+
+.retro-btn.active {
+    background: #113816;
+    border-color: var(--green-bright);
+    color: var(--white-crisp);
+    box-shadow: inset 0 0 6px var(--green-glow);
+}
+
+.retro-btn.danger {
+    border-color: #881828;
+    color: var(--crimson);
+}
+.retro-btn.danger:hover {
+    background: #660e1d;
+    color: #ffffff;
+    border-color: var(--crimson);
+    box-shadow: 0 0 8px var(--crimson-glow);
+}
+
+/* ==========================================================================
+   Screen Viewport & Presentation Framework
+   ========================================================================== */
+
+.viewport-content {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+}
+
+.terminal-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px 14px;
+    background: var(--bg-cabinet);
+}
+
+.terminal-screen.active {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+/* Inner Centering Box avoiding top-edge scroll trap */
+.screen-scroll-container {
+    margin: auto;
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Custom Retro DOS Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #020802;
+    border-left: 1px solid #143318;
+}
+::-webkit-scrollbar-thumb {
+    background: #1f5a28;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--green-bright);
+}
+
+/* ASCII Header Framing */
+.dos-frame {
+    border: 1px solid var(--green-border);
+    background: var(--bg-panel);
+    padding: 12px;
+    position: relative;
+    box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.7);
+}
+
+.dos-frame-title {
+    background: var(--bg-panel-solid);
+    border: 1px solid var(--green-border);
+    position: absolute;
+    top: -10px;
+    left: 14px;
+    padding: 0 8px;
+    font-family: var(--font-terminal);
+    font-size: 11px;
+    color: var(--green-bright);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* ==========================================================================
+   1. LOGIN SCREEN
+   ========================================================================== */
+
+#screen-login .screen-scroll-container {
+    max-width: 680px;
+}
+
+.dos-boot-terminal {
+    font-family: var(--font-dos);
+    font-size: 17px;
+    line-height: 1.3;
+    color: var(--green-bright);
+    margin-bottom: 12px;
+}
+
+.dos-prompt-box {
+    display: flex;
+    align-items: center;
+    background: #020702;
+    border: 2px solid var(--green-bright);
+    padding: 8px 12px;
+    margin: 12px 0;
+    box-shadow: 0 0 12px var(--green-glow);
+}
+
+.prompt-prefix {
+    font-family: var(--font-dos);
+    font-size: 20px;
+    color: var(--green-bright);
+    margin-right: 8px;
+    font-weight: bold;
+}
+
+.callsign-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #ffffff;
+    font-family: var(--font-dos);
+    font-size: 22px;
+    letter-spacing: 2px;
+    width: 220px;
+    text-transform: uppercase;
+}
+
+.cursor-blink {
+    display: inline-block;
+    width: 10px;
+    height: 18px;
+    background: var(--green-bright);
+    animation: blockBlink 0.9s infinite;
+    vertical-align: middle;
+}
+
+@keyframes blockBlink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+}
+
+.login-key-instruction {
+    font-size: 12px;
+    color: var(--amber);
+    margin-top: 6px;
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+/* ==========================================================================
+   2. SETTINGS SCREEN (Arsenal & Display)
+   ========================================================================== */
+
+#screen-settings .screen-scroll-container {
+    max-width: 880px;
+}
+
+.mode-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.mode-card {
+    background: #030a04;
+    border: 1px solid var(--green-dim);
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 110px;
+}
+
+.mode-card:hover {
+    border-color: var(--green-bright);
+    background: #061808;
+    box-shadow: 0 0 10px var(--green-glow);
+}
+
+.mode-card.active {
+    border-color: var(--green-bright);
+    background: #08240b;
+    box-shadow: inset 0 0 8px var(--green-glow), 0 0 10px var(--green-glow);
+}
+
+.mode-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #143b18;
+    padding-bottom: 4px;
+    margin-bottom: 4px;
+}
+
+.mode-num {
+    font-family: var(--font-arcade);
+    font-size: 9px;
+    color: var(--amber);
+}
+
+.mode-title {
+    font-weight: bold;
+    font-size: 12px;
+    color: var(--white-crisp);
+}
+
+.mode-desc {
+    font-size: 11px;
+    color: var(--white-dim);
+    margin-bottom: 6px;
+}
+
+.mode-samples {
+    font-family: var(--font-dos);
+    font-size: 14px;
+    color: var(--green-bright);
+    background: #010401;
+    border: 1px dashed #144018;
+    padding: 3px 5px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Granular Character Matrix Toggles */
+.matrix-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    background: #020702;
+    border: 1px solid #143d1a;
+    padding: 6px 12px;
+    margin-top: 6px;
+}
+
+.matrix-toggle-group {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.matrix-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.matrix-checkbox {
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--green-bright);
+    background: #000000;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--green-bright);
+}
+
+.matrix-checkbox.checked::after {
+    content: 'X';
+    font-family: var(--font-arcade);
+    font-size: 8px;
+    color: var(--green-bright);
+}
+
+.matrix-checkbox.locked {
+    opacity: 0.6;
+    border-color: #555555;
+    color: #555555;
+}
+
+/* Dynamic Live Preview Bar */
+.live-preview-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #020803;
+    border: 1px solid var(--green-border);
+    padding: 8px 12px;
+    font-family: var(--font-terminal);
+}
+
+.preview-label {
+    font-size: 11px;
+    color: var(--amber);
+    white-space: nowrap;
+}
+
+.preview-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.preview-chip {
+    background: #071f0a;
+    border: 1px solid var(--green-border);
+    padding: 2px 7px;
+    color: var(--green-bright);
+    font-size: 12px;
+}
+
+/* ==========================================================================
+   3. INSTRUCTIONS SCREEN (Combat Directive Grid)
+   ========================================================================== */
+
+#screen-instructions .screen-scroll-container {
+    max-width: 880px;
+}
+
+.tactical-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.directive-card {
+    background: #030a04;
+    border: 1px solid #143d1a;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.directive-title {
+    font-size: 12px;
+    color: var(--amber);
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid #143518;
+    padding-bottom: 2px;
+}
+
+.directive-desc {
+    font-size: 11px;
+    color: var(--white-dim);
+    line-height: 1.35;
+}
+
+.directive-desc b {
+    color: var(--white-crisp);
+}
+
+.directive-desc .crimson-txt {
+    color: var(--crimson);
+}
+
+.directive-desc .green-txt {
+    color: var(--green-bright);
+}
+
+.engage-cta-banner {
+    background: #08240b;
+    border: 2px solid var(--green-bright);
+    padding: 10px;
+    text-align: center;
+    font-family: var(--font-arcade);
+    font-size: 11px;
+    color: #ffffff;
+    cursor: pointer;
+    animation: ctaPulse 1.6s infinite;
+    letter-spacing: 1px;
+    box-shadow: 0 0 14px var(--green-glow);
+}
+
+@keyframes ctaPulse {
+    0%, 100% {
+        border-color: var(--green-bright);
+        box-shadow: 0 0 14px var(--green-glow);
+    }
+    50% {
+        border-color: #ffffff;
+        box-shadow: 0 0 24px rgba(0, 255, 102, 0.85);
+    }
+}
+
+/* ==========================================================================
+   4. GAME SCREEN (Canvas & Single-Row HUD)
+   ========================================================================== */
+
+#screen-game {
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    background: #030703;
+}
+
+.game-hud-bar {
+    height: 34px;
+    min-height: 34px;
+    background: #020702;
+    border-bottom: 1px solid var(--green-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    z-index: 50;
+    font-size: 11px;
+}
+
+.hud-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hud-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.hud-item .label {
+    color: var(--white-dim);
+    font-size: 10px;
+}
+
+.hud-item .value {
+    color: var(--green-bright);
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.hud-score {
+    font-family: var(--font-arcade);
+    font-size: 11px;
+    color: var(--white-crisp);
+    text-shadow: 0 0 8px var(--green-bright);
+    letter-spacing: 1px;
+}
+
+.hud-combo {
+    color: var(--amber);
+    font-weight: bold;
+}
+
+/* Hull Integrity Bar */
+.hull-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hull-bar-track {
+    width: 110px;
+    height: 12px;
+    background: #0a160a;
+    border: 1px solid #1e4a22;
+    position: relative;
+    overflow: hidden;
+}
+
+.hull-bar-fill {
+    height: 100%;
+    width: 100%;
+    background: var(--green-bright);
+    box-shadow: 0 0 8px var(--green-glow);
+    transition: width 0.15s ease, background 0.15s ease;
+}
+
+.hull-bar-fill.warning {
+    background: var(--amber);
+    box-shadow: 0 0 8px var(--amber-glow);
+}
+
+.hull-bar-fill.critical {
+    background: var(--crimson);
+    box-shadow: 0 0 12px var(--crimson-glow);
+    animation: criticalFlash 0.5s infinite;
+}
+
+@keyframes criticalFlash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+#combat-canvas {
+    flex: 1;
+    width: 100%;
+    height: calc(100% - 34px);
+    display: block;
+}
+
+/* ==========================================================================
+   5. RESULT SCREEN (Debrief & Arcade Celebration)
+   ========================================================================== */
+
+#screen-result .screen-scroll-container {
+    max-width: 820px;
+}
+
+.celebration-banner {
+    display: none;
+    background: #500814;
+    border: 2px solid var(--crimson);
+    padding: 8px;
+    text-align: center;
+    font-family: var(--font-arcade);
+    font-size: 13px;
+    color: #ffffff;
+    box-shadow: 0 0 20px var(--crimson-glow);
+    animation: recordBannerPulse 1.2s infinite;
+    letter-spacing: 1.5px;
+}
+
+.celebration-banner.active {
+    display: block;
+}
+
+@keyframes recordBannerPulse {
+    0%, 100% { transform: scale(1); border-color: var(--crimson); }
+    50% { transform: scale(1.02); border-color: #ffb000; box-shadow: 0 0 30px rgba(255, 176, 0, 0.8); }
+}
+
+.metrics-quad-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.metric-card {
+    background: #030904;
+    border: 1px solid var(--green-border);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.metric-label {
+    font-size: 10px;
+    color: var(--white-dim);
+    margin-bottom: 2px;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    font-family: var(--font-arcade);
+    font-size: 15px;
+    color: var(--white-crisp);
+    text-shadow: 0 0 6px var(--green-bright);
+}
+
+.pb-comparison-card {
+    background: #020702;
+    border: 1px solid #1a421e;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+}
+
+.pb-comparison-card .pb-delta {
+    color: var(--amber);
+    font-weight: bold;
+}
+
+/* ==========================================================================
+   6. MY RECORDS / FLIGHT LOGS SCREEN
+   ========================================================================== */
+
+#screen-records .screen-scroll-container {
+    max-width: 880px;
+}
+
+.overview-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+}
+
+.overview-card {
+    background: #030a04;
+    border: 1px solid var(--green-border);
+    padding: 6px;
+    text-align: center;
+}
+
+.overview-card .num {
+    font-family: var(--font-arcade);
+    font-size: 11px;
+    color: var(--green-bright);
+    margin-top: 3px;
+}
+
+.mode-bests-quad {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.mode-best-card {
+    background: #020702;
+    border: 1px solid #143518;
+    padding: 6px 8px;
+    font-size: 11px;
+}
+
+.mode-best-card .mode-tag {
+    color: var(--amber);
+    font-size: 10px;
+    font-weight: bold;
+    border-bottom: 1px solid #122c15;
+    padding-bottom: 2px;
+    margin-bottom: 4px;
+}
+
+.logs-filter-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #020702;
+    border: 1px solid #143518;
+    padding: 5px 8px;
+    gap: 8px;
+}
+
+.logs-filter-group {
+    display: flex;
+    gap: 4px;
+}
+
+.logs-table-container {
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--green-border);
+    background: #020502;
+}
+
+.flight-log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    text-align: left;
+}
+
+.flight-log-table th {
+    background: #061808;
+    color: var(--amber);
+    padding: 4px 8px;
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid var(--green-border);
+    font-weight: normal;
+    letter-spacing: 0.5px;
+}
+
+.flight-log-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #0d2610;
+    color: var(--white-crisp);
+}
+
+.flight-log-table tr:hover td {
+    background: #08240b;
+}
+
+.flight-log-table .pb-indicator {
+    color: #ffb000;
+    font-weight: bold;
+    margin-left: 4px;
+}
+
+/* Action Button Row */
+.action-button-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+/* Fullscreen Confetti Canvas */
+#confetti-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 200;
+    display: none;
+}
+
+/* ==========================================================================
+   Responsive Adaptations & 100% Zoom Constraints
+   ========================================================================== */
+
+@media (max-height: 720px) {
+    .marquee-header { height: 32px; min-height: 32px; }
+    .game-hud-bar { height: 30px; min-height: 30px; }
+    .dos-frame { padding: 8px 10px; }
+    .mode-card { min-height: 90px; padding: 6px; }
+    .logs-table-container { max-height: 160px; }
+}
+
+@media (max-width: 820px) {
+    .mode-grid { grid-template-columns: repeat(2, 1fr); }
+    .tactical-grid { grid-template-columns: 1fr; }
+    .overview-stats-grid { grid-template-columns: repeat(3, 1fr); }
+    .mode-bests-quad { grid-template-columns: repeat(2, 1fr); }
+}
